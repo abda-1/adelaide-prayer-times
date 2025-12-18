@@ -64,7 +64,7 @@ html {
 body {
     font-family: var(--font-body);
     background: #0f1929;
-    background-image: url('bg.jpg');
+    background-image: url('new-bg.png');
     background-size: cover;
     background-position: center top;
     background-attachment: fixed;
