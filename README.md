@@ -41,24 +41,26 @@ Then visit `http://localhost:8000`
 
 ## Updating Iqamah Times
 
-The mosque iqamah times are stored in the `MOSQUES_CONFIG` array in `index.html`. 
+The mosque iqamah times are stored in `mosques.json` and automatically updated daily via GitHub Actions.
 
 ### Manual Update
 
-Edit the `times` object for each mosque:
+Edit the `times` object for each mosque in `mosques.json`:
 
-```javascript
+```json
 {
-    id: 'maryam',
-    name: 'Maryam Mosque',
-    // ...
-    times: {
-        fajr: '04:50',      // Fixed time (24h format)
-        dhuhr: '13:22',
-        asr: '17:15',
-        maghrib: '+10',     // Minutes after athan
-        isha: '22:17',
-        jummah: '13:30'
+    "id": "maryam",
+    "name": "Maryam Mosque",
+    "address": "26 Clark Street, Wayville",
+    "coordinates": { "lat": -34.945, "lng": 138.596 },
+    "source": "Masjidbox",
+    "times": {
+        "fajr": "04:50",
+        "dhuhr": "13:22",
+        "asr": "17:15",
+        "maghrib": "+10",
+        "isha": "22:17",
+        "jummah": "13:30"
     }
 }
 ```
@@ -68,27 +70,26 @@ Edit the `times` object for each mosque:
 - **Fixed time**: `'13:30'` - Always at this time
 - **Relative to athan**: `'+10'` - 10 minutes after the athan time
 
-## Adding the Scraper (Optional)
+## Running the Scraper
 
-If you want to automatically fetch times from Masjidbox, you can run the included scraper:
+The scraper automatically fetches iqamah times from multiple sources (Masjidbox, Awqat, GoPray, ISSA):
 
 ```bash
-cd scraper
 npm install
-node scrape.js
+npm run scrape
 ```
 
-This will output updated times that you can copy into the config.
+This updates `mosques.json` directly. GitHub Actions runs this daily at 2am Adelaide time.
 
 ## Data Sources
 
 | Mosque | Source | Reliability |
 |--------|--------|-------------|
-| Wandana | Manual | ⚠️ Needs updates |
+| Wandana | ISSA | ✅ Relative times |
 | Maryam | Masjidbox | ✅ Live |
 | Adelaide City | Masjidbox | ✅ Live |
-| Al-Khalil | Manual | ⚠️ Needs updates |
-| The Centre | Manual | ⚠️ Needs updates |
+| Al-Khalil | Awqat | ✅ Live |
+| The Centre | GoPray | ✅ Live |
 
 ## Customisation
 
@@ -104,30 +105,30 @@ The athan times use the Muslim World League method by default. Change `CALCULATI
 
 ### Adding a New Mosque
 
-Add a new object to `MOSQUES_CONFIG`:
+Add a new object to the `mosques` array in `mosques.json`:
 
-```javascript
+```json
 {
-    id: 'new-mosque',
-    name: 'New Mosque Name',
-    shortName: 'New',
-    address: '123 Street, Suburb',
-    source: 'Manual',
-    sourceUrl: null,
-    times: {
-        fajr: '05:00',
-        dhuhr: '13:00',
-        asr: '16:30',
-        maghrib: '+5',
-        isha: '20:30',
-        jummah: '13:30'
+    "id": "new-mosque",
+    "name": "New Mosque Name",
+    "address": "123 Street, Suburb",
+    "coordinates": { "lat": -34.9285, "lng": 138.6007 },
+    "source": "Manual",
+    "sourceUrl": null,
+    "times": {
+        "fajr": "05:00",
+        "dhuhr": "13:00",
+        "asr": "16:30",
+        "maghrib": "+5",
+        "isha": "20:30",
+        "jummah": "13:30"
     }
 }
 ```
 
 ### Changing the Theme
 
-The colour scheme uses CSS variables. Edit the `:root` block in the `<style>` section:
+The colour scheme uses CSS variables. Edit the `:root` block in `styles.css`:
 
 ```css
 :root {
@@ -155,11 +156,11 @@ This app:
 
 ## Future Improvements
 
-- [ ] Add scraper for automatic Masjidbox updates
+- [x] ~~Add scraper for automatic updates~~ (Done - GitHub Actions)
+- [x] ~~Hijri date display~~ (Done)
 - [ ] PWA support for offline use
 - [ ] Push notifications
-- [ ] Dark/light mode toggle
-- [ ] Hijri date display
+- [ ] Location-based mosque sorting (Done - uses geolocation)
 
 ## Contributing
 
