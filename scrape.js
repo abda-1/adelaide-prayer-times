@@ -207,10 +207,13 @@ async function scrapeMasjidbox(url) {
         }
         
         // Parse jumuah from Friday's data
+        // Note: day.jumuah = Khutbah start time, day.iqamah.jumuah = Iqamah time
+        // We want the Khutbah start time (day.jumuah), not the iqamah
         let jummah = null;
         for (const day of timetable) {
             if (day.jumuah && day.jumuah[0]) {
-                jummah = parseISOTime(day.iqamah?.jumuah?.[0] || day.jumuah[0]);
+                // Get Khutbah time, NOT iqamah time
+                jummah = parseISOTime(day.jumuah[0]);
                 break;
             }
         }
