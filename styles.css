@@ -1,0 +1,924 @@
+:root {
+    /* Fonts */
+    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-display: 'Acme', 'Inter', sans-serif;
+
+    /* Watercolor Night Sky Palette */
+    --bg-glass: rgba(15, 25, 45, 0.319);
+    --bg-glass-solid: rgba(15, 25, 45, 0.54);
+    --bg-glass-light: rgba(25, 40, 65, 0.5);
+    --bg-card: rgba(20, 35, 55, 0.364);
+    --bg-card-hover: rgba(30, 50, 75, 0.75);
+    
+    --text-primary: #ffffff;
+    --text-secondary: rgba(255, 255, 255, 0.85);
+    --text-muted: rgba(255, 255, 255, 0.6);
+    --text-faint: rgba(255, 255, 255, 0.4);
+    
+    /* Gold accents to match the moon and desert */
+    --accent-gold: #E8C170;
+    --accent-gold-bright: #F5D485;
+    --accent-gold-soft: rgba(232, 193, 112, 0.2);
+    --accent-gold-glow: rgba(232, 193, 112, 0.4);
+    
+    --border-subtle: rgba(255, 255, 255, 0.1);
+    --border-medium: rgba(255, 255, 255, 0.15);
+    --border-gold: rgba(232, 193, 112, 0.3);
+
+    /* Prayer accent colors */
+    --accent-fajr: #7BA3C9;
+    --accent-sunrise: #E8C170;
+    --accent-dhuhr: #D4B85A;
+    --accent-asr: #D9A05B;
+    --accent-maghrib: #C97B6B;
+    --accent-isha: #8B85B8;
+
+    /* Shadows */
+    --shadow-sm: 0 2px 12px rgba(0, 0, 0, 0.25);
+    --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.35);
+    --shadow-glow: 0 0 30px rgba(232, 193, 112, 0.15);
+
+    /* Spacing */
+    --space-xs: 4px;
+    --space-sm: 8px;
+    --space-md: 16px;
+    --space-lg: 24px;
+    --space-xl: 40px;
+    --space-2xl: 64px;
+    --space-3xl: 80px;
+}
+
+/* Reset */
+*, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+    font-family: var(--font-body);
+    background: #0f1929;
+    background-image: url('bg.jpg');
+    background-size: cover;
+    background-position: center top;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    color: var(--text-primary);
+    min-height: 100vh;
+    min-height: 100dvh;
+    line-height: 1.5;
+    position: relative;
+}
+
+/* Subtle vignette overlay for depth */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 0%, rgba(10, 15, 25, 0.3) 100%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* ========================================
+   LAYOUT
+======================================== */
+.app {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 1fr minmax(0, 420px) 1fr;
+    min-height: 100vh;
+    padding: var(--space-md);
+}
+
+.main-content {
+    grid-column: 2;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ========================================
+   TAB NAVIGATION
+======================================== */
+.tabs {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-sm);
+    padding: var(--space-md) 0 var(--space-lg);
+}
+
+.tab-btn {
+    padding: 12px 22px;
+    background: var(--bg-glass);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--border-subtle);
+    border-radius: 24px;
+    font-family: var(--font-display);
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.tab-btn:hover {
+    background: var(--bg-glass-light);
+    color: var(--text-secondary);
+    border-color: var(--border-medium);
+}
+
+.tab-btn--active {
+    background: var(--accent-gold-soft);
+    color: var(--accent-gold-bright);
+    border-color: var(--border-gold);
+    box-shadow: var(--shadow-glow);
+}
+
+.tab-content {
+    display: none;
+    animation: fadeIn 0.4s ease;
+}
+
+.tab-content--active {
+    display: block;
+}
+
+/* ========================================
+   HERO - Transparent Design
+======================================== */
+.hero {
+    text-align: center;
+    padding: var(--space-xl) var(--space-md) var(--space-md);
+    background: transparent;
+    position: relative;
+}
+
+.hero__header {
+    margin-bottom: var(--space-lg);
+    position: relative;
+    z-index: 1;
+}
+
+/* Top line: Adelaide · Hijri Date (tiny, muted) */
+.hero__meta {
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: var(--space-xs);
+    text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+}
+
+.hero__location {
+    color: var(--text-secondary);
+}
+
+.hero__separator {
+    margin: 0 8px;
+    opacity: 0.5;
+}
+
+/* Second line: Gregorian date (small, secondary) */
+.hero__date {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    line-height: 1.4;
+    text-shadow: 0 2px 12px rgba(0,0,0,0.5);
+}
+
+/* Next Prayer - The Focal Point */
+.next-prayer {
+    position: relative;
+    z-index: 1;
+}
+
+/* MASSIVE prayer name */
+.next-prayer__name {
+    font-family: var(--font-display);
+    font-size: 4.5rem;
+    font-weight: 400;
+    letter-spacing: 0.02em;
+    color: var(--text-primary);
+    line-height: 1;
+    margin-bottom: var(--space-lg);
+    text-shadow: 
+        0 4px 30px rgba(0, 0, 0, 0.6), 
+        0 2px 4px rgba(0,0,0,0.4),
+        0 0 60px rgba(0,0,0,0.3);
+}
+
+/* Prominent countdown */
+.next-prayer__countdown {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 28px;
+    background: rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 30px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.05em;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.next-prayer__countdown-icon {
+    width: 20px;
+    height: 20px;
+    opacity: 0.7;
+    flex-shrink: 0;
+}
+
+.next-prayer__countdown-text {
+    min-width: 130px;
+}
+
+/* ========================================
+   PRAYER CARDS - Glassmorphism Style
+======================================== */
+.prayer-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    background: var(--bg-glass);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 20px;
+    border: 1px solid var(--border-subtle);
+    overflow: hidden;
+    box-shadow: var(--shadow-md);
+}
+
+.prayer-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-md) var(--space-lg);
+    background: transparent;
+    transition: all 0.3s ease;
+}
+
+.prayer-card:not(:last-child) {
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.prayer-card--active {
+    background: rgba(232, 193, 112, 0.08);
+    position: relative;
+}
+
+.prayer-card--active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: linear-gradient(180deg, var(--accent-gold-bright), var(--accent-gold));
+    box-shadow: 0 0 10px var(--accent-gold-glow);
+}
+
+.prayer-card--passed {
+    opacity: 0.4;
+}
+
+.prayer-card--passed .prayer-card__name {
+    text-decoration: line-through;
+    text-decoration-color: var(--text-faint);
+}
+
+.prayer-card__left {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+}
+
+/* Prayer Dot Icons */
+.prayer-card__icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.prayer-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    transition: all 0.25s ease;
+}
+
+.prayer-dot--fajr { background: var(--accent-fajr); }
+.prayer-dot--sunrise { background: var(--accent-sunrise); }
+.prayer-dot--dhuhr { background: var(--accent-dhuhr); }
+.prayer-dot--asr { background: var(--accent-asr); }
+.prayer-dot--maghrib { background: var(--accent-maghrib); }
+.prayer-dot--isha { background: var(--accent-isha); }
+
+.prayer-card--active .prayer-dot {
+    transform: scale(1.3);
+    box-shadow: 0 0 8px currentColor;
+}
+
+.prayer-card__name {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.prayer-card__time {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.prayer-card--active .prayer-card__name {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.prayer-card--active .prayer-card__time {
+    color: var(--accent-gold-bright);
+    font-weight: 600;
+}
+
+/* ========================================
+   MOSQUES SECTION
+======================================== */
+.mosques-section {
+    margin-top: var(--space-lg);
+}
+
+.mosques-section--no-margin {
+    margin-top: 0;
+}
+
+.section-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent-gold);
+    margin-bottom: var(--space-lg);
+    text-align: center;
+    text-shadow: 0 0 15px var(--accent-gold-soft);
+}
+
+.mosque-cards {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.mosque-card {
+    background: var(--bg-glass);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border-subtle);
+    border-radius: 20px;
+    padding: var(--space-lg);
+    transition: all 0.3s ease;
+}
+
+.mosque-card:hover {
+    background: var(--bg-glass-solid);
+    border-color: var(--border-medium);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.mosque-card__header {
+    margin-bottom: var(--space-md);
+}
+
+.mosque-card__title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-sm);
+}
+
+.mosque-card__name {
+    font-family: var(--font-display);
+    font-size: 1.15rem;
+    font-weight: 400;
+    color: var(--text-primary);
+}
+
+.mosque-card__directions-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: var(--accent-gold-soft);
+    border: 1px solid var(--border-gold);
+    border-radius: 50%;
+    color: var(--accent-gold);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.mosque-card__directions-btn:hover {
+    background: var(--accent-gold);
+    color: #000;
+    transform: scale(1.05);
+}
+
+.mosque-card__directions-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.mosque-card__address {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+.mosque-card__distance {
+    color: var(--accent-gold);
+    font-weight: 500;
+}
+
+/* Iqamah Section */
+.mosque-card__iqamah {
+    margin-top: var(--space-md);
+}
+
+.mosque-card__iqamah-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    margin-bottom: var(--space-md);
+}
+
+.mosque-card__times {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: var(--space-xs);
+}
+
+.mosque-time {
+    text-align: center;
+    padding: var(--space-sm) var(--space-xs);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.mosque-time--next {
+    background: var(--accent-gold-soft);
+    border: 1px solid var(--border-gold);
+}
+
+.mosque-time__badge {
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.5rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #000;
+    background: var(--accent-gold);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.mosque-time__label {
+    font-size: 0.55rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 2px;
+}
+
+.mosque-time__value {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+}
+
+.mosque-time--next .mosque-time__label {
+    color: var(--accent-gold);
+}
+
+.mosque-time--next .mosque-time__value {
+    color: var(--accent-gold-bright);
+    text-shadow: 0 0 10px var(--accent-gold-soft);
+}
+
+.mosque-card__footer {
+    margin-top: var(--space-lg);
+    padding-top: var(--space-md);
+    border-top: 1px solid var(--border-subtle);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.mosque-card__jummah {
+    font-weight: 400;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.mosque-card__jummah span {
+    color: var(--accent-gold-bright);
+    font-weight: 600;
+}
+
+.mosque-card__source {
+    font-size: 0.6rem;
+    opacity: 0.5;
+}
+
+/* Navigation Popup (iOS) */
+.nav-popup-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 1000;
+    padding: var(--space-md);
+    animation: fadeIn 0.2s ease;
+}
+
+.nav-popup {
+    background: var(--bg-glass-solid);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border-medium);
+    border-radius: 20px;
+    padding: var(--space-lg);
+    width: 100%;
+    max-width: 320px;
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.nav-popup__title {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    color: var(--text-primary);
+    text-align: center;
+    margin-bottom: var(--space-lg);
+}
+
+.nav-popup__buttons {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.nav-popup__btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+    padding: 14px var(--space-lg);
+    border-radius: 12px;
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.nav-popup__btn--apple {
+    background: #fff;
+    color: #000;
+}
+
+.nav-popup__btn--apple:hover {
+    background: #f0f0f0;
+}
+
+.nav-popup__btn--google {
+    background: #4285f4;
+    color: #fff;
+}
+
+.nav-popup__btn--google:hover {
+    background: #3574e0;
+}
+
+.nav-popup__cancel {
+    margin-top: var(--space-md);
+    width: 100%;
+    padding: 12px;
+    background: transparent;
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    color: var(--text-muted);
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.nav-popup__cancel:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+}
+
+/* ========================================
+   FOOTER
+======================================== */
+.footer {
+    text-align: center;
+    padding: var(--space-xl) 0 var(--space-lg);
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+
+.footer a {
+    color: var(--accent-gold);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.footer a:hover {
+    color: var(--accent-gold-bright);
+    text-decoration: underline;
+}
+
+/* ========================================
+   LOADING & ERROR STATES
+======================================== */
+.loading {
+    text-align: center;
+    padding: var(--space-lg) 0;
+    color: var(--text-muted);
+}
+
+.loading__spinner {
+    width: 28px;
+    height: 28px;
+    border: 2px solid var(--border-subtle);
+    border-top-color: var(--accent-gold);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto var(--space-md);
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.error {
+    background: rgba(239, 68, 68, 0.15);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 16px;
+    padding: var(--space-md);
+    margin-bottom: var(--space-md);
+    font-size: 0.85rem;
+    color: #fca5a5;
+}
+
+/* ========================================
+   RESPONSIVE - Mobile First
+======================================== */
+@media (max-width: 560px) {
+    .app {
+        grid-template-columns: 1fr;
+        padding: var(--space-md) var(--space-lg);
+    }
+
+    .main-content {
+        grid-column: 1;
+    }
+
+    .hero {
+        padding: var(--space-md);
+        margin-bottom: var(--space-sm);
+        border-radius: 20px;
+    }
+
+    .hero {
+        padding: var(--space-lg) var(--space-sm) var(--space-md);
+    }
+
+    .hero__header {
+        margin-bottom: var(--space-md);
+    }
+    
+    .hero__meta {
+        font-size: 0.65rem;
+    }
+    
+    .hero__date {
+        font-size: 0.95rem;
+    }
+
+    .next-prayer__name {
+        font-size: 3.2rem;
+        margin-bottom: var(--space-md);
+    }
+
+    .next-prayer__countdown {
+        padding: 12px 20px;
+        font-size: 1rem;
+        gap: 8px;
+    }
+    
+    .next-prayer__countdown-icon {
+        width: 18px;
+        height: 18px;
+    }
+    
+    .next-prayer__countdown-text {
+        min-width: 115px;
+    }
+
+    .prayer-card {
+        padding: var(--space-sm) var(--space-md);
+    }
+
+    .prayer-card__name,
+    .prayer-card__time {
+        font-size: 0.9rem;
+    }
+    
+    .tabs {
+        padding: var(--space-md) 0;
+    }
+    
+    .tab-btn {
+        padding: 10px 16px;
+        font-size: 0.75rem;
+    }
+
+    .mosques-section {
+        margin-top: var(--space-md);
+    }
+
+    .mosque-card {
+        padding: var(--space-md);
+        border-radius: 16px;
+    }
+
+    .mosque-time {
+        padding: var(--space-xs);
+        border-radius: 10px;
+    }
+
+    .mosque-time__label {
+        font-size: 0.5rem;
+    }
+
+    .mosque-time__value {
+        font-size: 0.7rem;
+    }
+    
+    .mosque-card__directions-btn {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .mosque-card__directions-btn svg {
+        width: 14px;
+        height: 14px;
+    }
+    
+    .mosque-time__badge {
+        font-size: 0.45rem;
+        padding: 1px 4px;
+        top: -8px;
+    }
+}
+
+/* Extra small devices (iPhone SE, etc) */
+@media (max-width: 380px) {
+    .app {
+        padding: var(--space-sm) var(--space-md);
+    }
+    
+    .next-prayer__name {
+        font-size: 2.5rem;
+    }
+    
+    .next-prayer__countdown {
+        padding: 10px 16px;
+        font-size: 0.85rem;
+        gap: 6px;
+    }
+    
+    .next-prayer__countdown-icon {
+        width: 16px;
+        height: 16px;
+    }
+    
+    .next-prayer__countdown-text {
+        min-width: 100px;
+    }
+    
+    .tab-btn {
+        padding: 8px 12px;
+        font-size: 0.7rem;
+    }
+    
+    .mosque-time__label {
+        font-size: 0.45rem;
+    }
+    
+    .mosque-time__value {
+        font-size: 0.65rem;
+    }
+}
+
+/* Fade in animation */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.main-content > * {
+    animation: fadeIn 0.6s ease both;
+}
+
+.hero { animation-delay: 0s; }
+.tabs { animation-delay: 0.15s; }
+.prayer-cards { animation-delay: 0.2s; }
+.mosques-section { animation-delay: 0.2s; }
+
+/* ========================================
+   DEBUG BUTTON
+======================================== */
+.debug-area {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    width: 80px;
+    height: 80px;
+    z-index: 100;
+}
+
+.debug-btn {
+    position: absolute;
+    bottom: var(--space-md);
+    right: var(--space-md);
+    padding: 10px 16px;
+    background: var(--bg-glass);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: var(--text-muted);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 0.7rem;
+    font-weight: 500;
+    cursor: pointer;
+    opacity: 0;
+    transform: translateY(4px);
+    transition: all 0.3s ease;
+}
+
+.debug-area:hover .debug-btn {
+    opacity: 0.9;
+    transform: translateY(0);
+}
+
+.debug-btn:hover {
+    opacity: 1;
+    color: var(--accent-gold);
+    border-color: var(--border-gold);
+}
+

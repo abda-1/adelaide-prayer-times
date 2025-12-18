@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local Adelaide Prayer Times</title>
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=inter:300,400,500,600,700|acme:400" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app">
+        <main class="main-content">
+            <!-- Shared Hero Section -->
+            <section class="hero">
+                <div class="hero__header">
+                    <p class="hero__meta">
+                        <span class="hero__location">Adelaide</span>
+                        <span class="hero__separator">·</span>
+                        <span id="hijriDate"></span>
+                    </p>
+                    <p class="hero__date" id="gregorianDate">Loading...</p>
+                </div>
+
+                <!-- Next Prayer - Focal Point -->
+                <div class="next-prayer" id="nextPrayerSection">
+                    <div class="loading">
+                        <div class="loading__spinner"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab Navigation (below hero) -->
+            <nav class="tabs">
+                <button class="tab-btn tab-btn--active" data-tab="masajid">Masajid Iqamah Times</button>
+                <button class="tab-btn" data-tab="athan">Local Athan Times</button>
+            </nav>
+
+            <!-- Tab: Masajid (Iqamah Times) -->
+            <div class="tab-content tab-content--active" id="tab-masajid">
+                <!-- Mosques Section -->
+                <section class="mosques-section mosques-section--no-margin">
+                    <div id="errorContainer"></div>
+                    <div class="mosque-cards" id="mosqueCards">
+                        <!-- Populated by JS -->
+                    </div>
+                </section>
+            </div>
+
+            <!-- Tab: Athan Times (Regional) -->
+            <div class="tab-content" id="tab-athan">
+                <!-- Prayer Cards -->
+                <section class="prayer-cards" id="prayerCards">
+                    <!-- Populated by JS -->
+                </section>
+
+                <p class="section-label" style="margin-top: var(--space-xl);">Regional Athan Times (AlAdhan API)</p>
+            </div>
+
+            <footer class="footer">
+                <p>Data from <a href="https://aladhan.com" target="_blank" rel="noopener">AlAdhan</a> · Updated <span id="lastUpdated">—</span></p>
+            </footer>
+        </main>
+    </div>
+
+    <!-- Debug: Cycle through prayers (hover bottom-right to reveal) -->
+    <div class="debug-area">
+        <button class="debug-btn" id="debugBtn">Test: Fajr</button>
+    </div>
+
+    <script>
+        // ============================================
+        // CONFIGURATION
+        // ============================================
+        const ADELAIDE_COORDS = { latitude: -34.9285, longitude: 138.6007 };
+        const CALCULATION_METHOD = 3;
+        const MOSQUES_JSON_URL = 'mosques.json';
+
+        // ============================================
+        // STATE
+        // ============================================
+        let regionalTimes = null;
+        let hijriDate = null;
+        let mosquesData = null;
+
+        // ============================================
+        // UTILITIES
+        // ============================================
+        const PRAYER_ORDER = ['fajr', 'sunrise', 'dhuhr', 'asr', 'maghrib', 'isha'];
+        const PRAYER_DISPLAY = { fajr: 'Fajr', sunrise: 'Sunrise', dhuhr: 'Dhuhr', asr: 'Asr', maghrib: 'Maghrib', isha: 'Isha' };
+
+        function formatTime(timeStr) {
+            if (!timeStr) return '—';
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            const period = hours >= 12 ? 'PM' : 'AM';
+            const displayHours = hours % 12 || 12;
+            return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
+        }
+
+        function timeToMinutes(timeStr) {
+            if (!timeStr) return 0;
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            return hours * 60 + minutes;
+        }
+
+        function minutesToTime(minutes) {
+            const hours = Math.floor(minutes / 60) % 24;
+            const mins = minutes % 60;
+            return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+        }
+
+        function getCurrentMinutes() {
+            const now = new Date();
+            return now.getHours() * 60 + now.getMinutes();
+        }
+
+        function formatGregorianDate() {
+            return new Date().toLocaleDateString('en-AU', { 
+                weekday: 'long', day: 'numeric', month: 'long' 
+            });
+        }
+
+        // No longer needed - dark mode is always active
+
+        // ============================================
+        // API
+        // ============================================
+        async function fetchMosquesData() {
+            const response = await fetch(MOSQUES_JSON_URL);
+            if (!response.ok) throw new Error('Failed to fetch mosques data');
+            const data = await response.json();
+            return data.mosques;
+        }
+
+        async function fetchRegionalTimes() {
+            const today = new Date();
+            const dateStr = `${today.getDate()}-${today.getMonth() + 1}-${today.getFullYear()}`;
+            const url = `https://api.aladhan.com/v1/timings/${dateStr}?latitude=${ADELAIDE_COORDS.latitude}&longitude=${ADELAIDE_COORDS.longitude}&method=${CALCULATION_METHOD}`;
+            
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('Failed to fetch');
+            
+            const data = await response.json();
+            const timings = data.data.timings;
+            hijriDate = data.data.date.hijri;
+            
+            return {
+                fajr: timings.Fajr,
+                sunrise: timings.Sunrise,
+                dhuhr: timings.Dhuhr,
+                asr: timings.Asr,
+                maghrib: timings.Maghrib,
+                isha: timings.Isha
+            };
+        }
+
+        // ============================================
+        // PRAYER CALCULATIONS
+        // ============================================
+        function getPrayerStatus(times) {
+            const now = getCurrentMinutes();
+            const prayers = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
+            
+            let nextPrayer = null;
+            let currentPrayer = null;
+            
+            for (let i = 0; i < prayers.length; i++) {
+                const prayerTime = timeToMinutes(times[prayers[i]]);
+                if (now < prayerTime) {
+                    nextPrayer = { key: prayers[i], time: times[prayers[i]], minutes: prayerTime };
+                    currentPrayer = i > 0 ? prayers[i - 1] : 'isha';
+                    break;
+                }
+            }
+            
+            if (!nextPrayer) {
+                nextPrayer = { key: 'fajr', time: times.fajr, minutes: timeToMinutes(times.fajr) + 24 * 60 };
+                currentPrayer = 'isha';
+            }
+
+            const minutesUntil = nextPrayer.minutes - now;
+            const passedPrayers = [];
+            
+            for (const p of prayers) {
+                if (timeToMinutes(times[p]) <= now) {
+                    passedPrayers.push(p);
+                }
+            }
+
+            return { nextPrayer, currentPrayer, minutesUntil, passedPrayers };
+        }
+
+        function resolveIqamahTime(config, athanTime) {
+            if (!config) return null;
+            if (typeof config === 'string' && config.startsWith('+')) {
+                return minutesToTime(timeToMinutes(athanTime) + parseInt(config.substring(1), 10));
+            }
+            return config;
+        }
+
+        function getNextMosquePrayer(mosque, regional) {
+            const now = getCurrentMinutes();
+            for (const p of ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha']) {
+                const iqamah = resolveIqamahTime(mosque.times[p], regional[p]);
+                if (iqamah && timeToMinutes(iqamah) > now) return p;
+            }
+            return 'fajr';
+        }
+
+        // ============================================
+        // RENDER FUNCTIONS
+        // ============================================
+        function renderNextPrayer(status, times) {
+            const container = document.getElementById('nextPrayerSection');
+            if (!container) return;
+            
+            const hours = Math.floor(status.minutesUntil / 60);
+            const mins = status.minutesUntil % 60;
+            const secs = 59 - new Date().getSeconds();
+            const countdownText = hours > 0 
+                ? `in ${hours}h ${mins}m ${secs}s` 
+                : `in ${mins}m ${secs}s`;
+
+            container.innerHTML = `
+                <h1 class="next-prayer__name">${PRAYER_DISPLAY[status.nextPrayer.key]}</h1>
+                <div class="next-prayer__countdown" id="countdown">
+                    <svg class="next-prayer__countdown-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M5 22h14"/>
+                        <path d="M5 2h14"/>
+                        <path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/>
+                        <path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/>
+                    </svg>
+                    <span class="next-prayer__countdown-text">${countdownText}</span>
+                </div>
+            `;
+        }
+
+        function renderPrayerCards(times, status) {
+            const container = document.getElementById('prayerCards');
+
+            container.innerHTML = PRAYER_ORDER.map(prayer => {
+                const isPassed = status.passedPrayers.includes(prayer);
+                const isActive = prayer === status.nextPrayer.key;
+
+                let cardClass = 'prayer-card';
+                if (isActive) cardClass += ' prayer-card--active';
+                if (isPassed && prayer !== 'sunrise') cardClass += ' prayer-card--passed';
+
+                return `
+                    <div class="${cardClass}">
+                        <div class="prayer-card__left">
+                            <div class="prayer-card__icon">
+                                <span class="prayer-dot prayer-dot--${prayer}"></span>
+                            </div>
+                            <span class="prayer-card__name">${PRAYER_DISPLAY[prayer]}</span>
+                        </div>
+                        <span class="prayer-card__time">${formatTime(times[prayer])}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function getDirectionsUrls(coords) {
+            if (!coords) return null;
+            const { lat, lng } = coords;
+            
+            return {
+                apple: `https://maps.apple.com/?daddr=${lat},${lng}&dirflg=d&t=m`,
+                google: `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`
+            };
+        }
+
+        // ============================================
+        // LOCATION-BASED SORTING
+        // ============================================
+        let userLocation = null;
+
+        // Haversine formula to calculate distance between two coordinates
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Earth's radius in km
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        // Get user's location (requires permission)
+        function getUserLocation() {
+            return new Promise((resolve, reject) => {
+                if (!navigator.geolocation) {
+                    reject(new Error('Geolocation not supported'));
+                    return;
+                }
+
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        resolve({
+                            lat: position.coords.latitude,
+                            lng: position.coords.longitude
+                        });
+                    },
+                    (error) => {
+                        reject(error);
+                    },
+                    {
+                        enableHighAccuracy: false,
+                        timeout: 10000,
+                        maximumAge: 300000 // Cache for 5 minutes
+                    }
+                );
+            });
+        }
+
+        // Sort mosques by distance from user
+        function sortMosquesByDistance(mosques, userLoc) {
+            return mosques
+                .map(mosque => {
+                    if (mosque.coordinates) {
+                        mosque.distance = calculateDistance(
+                            userLoc.lat, userLoc.lng,
+                            mosque.coordinates.lat, mosque.coordinates.lng
+                        );
+                    } else {
+                        mosque.distance = Infinity;
+                    }
+                    return mosque;
+                })
+                .sort((a, b) => a.distance - b.distance);
+        }
+
+        // Format distance for display
+        function formatDistance(km) {
+            if (km === Infinity || km === undefined) return null;
+            if (km < 1) return `${Math.round(km * 1000)}m`;
+            return `${km.toFixed(1)}km`;
+        }
+
+        // Detect iOS for navigation popup
+        function isIOS() {
+            return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        }
+
+        function handleDirections(appleUrl, googleUrl, event) {
+            if (isIOS()) {
+                event.preventDefault();
+                showNavigationPopup(appleUrl, googleUrl);
+            }
+            // On Android/Desktop, the default Google Maps link will work
+        }
+
+        function showNavigationPopup(appleUrl, googleUrl) {
+            // Remove existing popup if any
+            const existing = document.querySelector('.nav-popup-overlay');
+            if (existing) existing.remove();
+
+            const popup = document.createElement('div');
+            popup.className = 'nav-popup-overlay';
+            popup.innerHTML = `
+                <div class="nav-popup">
+                    <p class="nav-popup__title">Open in Maps</p>
+                    <div class="nav-popup__buttons">
+                        <a href="${appleUrl}" class="nav-popup__btn nav-popup__btn--apple">
+                            <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                            </svg>
+                            Apple Maps
+                        </a>
+                        <a href="${googleUrl}" class="nav-popup__btn nav-popup__btn--google">
+                            <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                            </svg>
+                            Google Maps
+                        </a>
+                    </div>
+                    <button class="nav-popup__cancel">Cancel</button>
+                </div>
+            `;
+
+            document.body.appendChild(popup);
+
+            // Close handlers
+            popup.querySelector('.nav-popup__cancel').addEventListener('click', () => popup.remove());
+            popup.addEventListener('click', (e) => {
+                if (e.target === popup) popup.remove();
+            });
+        }
+
+        function renderMosques(mosques, regional) {
+            const container = document.getElementById('mosqueCards');
+            
+            container.innerHTML = mosques.map(mosque => {
+                const nextPrayer = getNextMosquePrayer(mosque, regional);
+                const prayers = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
+                const urls = getDirectionsUrls(mosque.coordinates);
+                const sourceLabel = mosque.source === 'Manual' ? 'Updated manually' : `via ${mosque.source}`;
+                
+                return `
+                    <div class="mosque-card">
+                        <div class="mosque-card__header">
+                            <div class="mosque-card__title-row">
+                                <h3 class="mosque-card__name">${mosque.name}</h3>
+                                ${urls ? `
+                                    <button class="mosque-card__directions-btn" onclick="handleDirections('${urls.apple}', '${urls.google}', event)" title="Get Directions">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71L12 2z"/>
+                                        </svg>
+                                    </button>
+                                ` : ''}
+                            </div>
+                            <p class="mosque-card__address">
+                                ${mosque.address}
+                                ${mosque.distance !== undefined && mosque.distance !== Infinity ? `
+                                    <span class="mosque-card__distance">· ${formatDistance(mosque.distance)}</span>
+                                ` : ''}
+                            </p>
+                        </div>
+                        
+                        <div class="mosque-card__iqamah">
+                            <p class="mosque-card__iqamah-label">Iqamah Times</p>
+                            <div class="mosque-card__times">
+                                ${prayers.map(p => {
+                                    const iqamah = resolveIqamahTime(mosque.times[p], regional[p]);
+                                    const isNext = p === nextPrayer;
+                                    return `
+                                        <div class="mosque-time ${isNext ? 'mosque-time--next' : ''}">
+                                            ${isNext ? '<span class="mosque-time__badge">Next</span>' : ''}
+                                            <div class="mosque-time__label">${PRAYER_DISPLAY[p]}</div>
+                                            <div class="mosque-time__value">${formatTime(iqamah)}</div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                        
+                        <div class="mosque-card__footer">
+                            <span class="mosque-card__jummah">
+                                <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14" style="opacity: 0.6; margin-right: 4px; vertical-align: -2px;">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                </svg>
+                                Jumu'ah <span>${formatTime(mosque.times.jummah)}</span>
+                            </span>
+                            <span class="mosque-card__source">${sourceLabel}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // For non-iOS, make the directions button open Google Maps directly
+            if (!isIOS()) {
+                document.querySelectorAll('.mosque-card__directions-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        // Extract Google URL from onclick and open it
+                        const onclickAttr = btn.getAttribute('onclick');
+                        const googleMatch = onclickAttr.match(/'(https:\/\/www\.google\.com[^']+)'/);
+                        if (googleMatch) {
+                            window.open(googleMatch[1], '_blank');
+                        }
+                    });
+                });
+            }
+        }
+
+        function showError(msg) {
+            document.getElementById('errorContainer').innerHTML = `<div class="error">${msg}</div>`;
+        }
+
+        // ============================================
+        // COUNTDOWN TIMER
+        // ============================================
+        function updateCountdown() {
+            if (!regionalTimes) return;
+            const status = getPrayerStatus(regionalTimes);
+            const h = Math.floor(status.minutesUntil / 60);
+            const m = status.minutesUntil % 60;
+            const s = 59 - new Date().getSeconds();
+            const text = h > 0 ? `in ${h}h ${m}m ${s}s` : `in ${m}m ${s}s`;
+            
+            const textEl = document.querySelector('.next-prayer__countdown-text');
+            if (textEl) textEl.textContent = text;
+        }
+
+        // ============================================
+        // TAB SWITCHING
+        // ============================================
+        function initTabs() {
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const tabId = btn.dataset.tab;
+
+                    // Update button states
+                    tabBtns.forEach(b => b.classList.remove('tab-btn--active'));
+                    btn.classList.add('tab-btn--active');
+
+                    // Update content visibility
+                    tabContents.forEach(content => {
+                        content.classList.remove('tab-content--active');
+                        if (content.id === `tab-${tabId}`) {
+                            content.classList.add('tab-content--active');
+                        }
+                    });
+                });
+            });
+        }
+
+        // ============================================
+        // INIT
+        // ============================================
+        async function init() {
+            try {
+                const dateStr = formatGregorianDate();
+                document.getElementById('gregorianDate').textContent = dateStr;
+
+                // Fetch data in parallel
+                const [mosques, times] = await Promise.all([
+                    fetchMosquesData(),
+                    fetchRegionalTimes()
+                ]);
+
+                mosquesData = mosques;
+                regionalTimes = times;
+
+                if (hijriDate) {
+                    const hijriStr = `${hijriDate.day} ${hijriDate.month.en}`;
+                    document.getElementById('hijriDate').textContent = hijriStr;
+                }
+
+                const status = getPrayerStatus(regionalTimes);
+                
+                // Render shared hero and tab content
+                renderNextPrayer(status, regionalTimes);
+                renderPrayerCards(regionalTimes, status);
+                
+                // Try to get user location for distance sorting (non-blocking)
+                try {
+                    userLocation = await getUserLocation();
+                    mosquesData = sortMosquesByDistance([...mosques], userLocation);
+                } catch (e) {
+                    // Location denied or unavailable - use default order
+                    console.log('Location not available:', e.message);
+                }
+                
+                renderMosques(mosquesData, regionalTimes);
+
+                document.getElementById('lastUpdated').textContent =
+                    new Date().toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' });
+
+                setInterval(updateCountdown, 1000);
+
+            } catch (error) {
+                console.error('Init error:', error);
+                showError('Failed to load prayer times. Please refresh.');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initTabs();
+            init();
+        });
+        setInterval(init, 30 * 60 * 1000);
+
+        // ============================================
+        // DEBUG: Cycle through prayers
+        // ============================================
+        let debugPrayerIndex = 0;
+        const DEBUG_PRAYERS = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
+
+        function simulatePrayerState(prayerKey) {
+            if (!regionalTimes) return;
+
+            const prayers = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
+            const prayerIndex = prayers.indexOf(prayerKey);
+
+            // Create simulated status
+            const passedPrayers = prayers.slice(0, prayerIndex);
+            const nextPrayer = {
+                key: prayerKey,
+                time: regionalTimes[prayerKey],
+                minutes: timeToMinutes(regionalTimes[prayerKey])
+            };
+
+            // Random countdown for demo
+            const minutesUntil = Math.floor(Math.random() * 120) + 10;
+
+            const status = {
+                nextPrayer,
+                currentPrayer: prayerIndex > 0 ? prayers[prayerIndex - 1] : 'isha',
+                minutesUntil,
+                passedPrayers
+            };
+
+            // Re-render with simulated state
+            renderNextPrayer(status, regionalTimes);
+            renderPrayerCards(regionalTimes, status);
+        }
+
+        document.getElementById('debugBtn').addEventListener('click', function() {
+            debugPrayerIndex = (debugPrayerIndex + 1) % DEBUG_PRAYERS.length;
+            const prayer = DEBUG_PRAYERS[debugPrayerIndex];
+            
+            simulatePrayerState(prayer);
+            
+            // Update button text to show next prayer
+            const nextIndex = (debugPrayerIndex + 1) % DEBUG_PRAYERS.length;
+            this.textContent = `Test: ${PRAYER_DISPLAY[DEBUG_PRAYERS[nextIndex]]}`;
+        });
+    </script>
+</body>
+</html>
