@@ -7,8 +7,8 @@
       "name": "Masjid Abu Bakr (Wandana)",
       "address": "52 Wandana Ave, Gilles Plains",
       "coordinates": {
-        "lat": -34.8489,
-        "lng": 138.6321
+        "lat": -34.847936944908604,
+        "lng": 138.66013603862189
       },
       "source": "ISSA",
       "sourceUrl": "https://islamicsocietysa.org.au/mosque/wandana-mosque/",
@@ -26,8 +26,8 @@
       "name": "The Centre (Kilburn)",
       "address": "416 Churchill Rd, Kilburn",
       "coordinates": {
-        "lat": -34.8631,
-        "lng": 138.5862
+        "lat": -34.861518896220076,
+        "lng": 138.58277103625346
       },
       "source": "GoPray",
       "sourceUrl": "https://gopray.com.au/place/kilburn-musallah/",
@@ -64,8 +64,8 @@
       "name": "Adelaide City Mosque",
       "address": "20-28 Little Gilbert St, Adelaide",
       "coordinates": {
-        "lat": -34.9301,
-        "lng": 138.5998
+        "lat": -34.93413532622082,
+        "lng": 138.59166045122373
       },
       "source": "Masjidbox",
       "sourceUrl": "https://masjidbox.com/prayer-times/adelaide-city-mosque",
@@ -83,8 +83,8 @@
       "name": "Al-Khalil Mosque",
       "address": "596 Torrens Rd, Woodville North",
       "coordinates": {
-        "lat": -34.8683,
-        "lng": 138.5456
+        "lat": -34.86851956456468,
+        "lng": 138.5383512721761
       },
       "source": "Awqat",
       "sourceUrl": "https://awqat.com.au/sa/akm/",
