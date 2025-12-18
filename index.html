@@ -64,9 +64,9 @@
     </div>
 
     <!-- Debug: Cycle through prayers (hover bottom-right to reveal) -->
-    <div class="debug-area">
+    <!-- <div class="debug-area">
         <button class="debug-btn" id="debugBtn">Test: Fajr</button>
-    </div>
+    </div> -->
 
     <script>
         // ============================================
@@ -603,14 +603,14 @@
         }
 
         document.getElementById('debugBtn').addEventListener('click', function() {
-            debugPrayerIndex = (debugPrayerIndex + 1) % DEBUG_PRAYERS.length;
-            const prayer = DEBUG_PRAYERS[debugPrayerIndex];
+            // debugPrayerIndex = (debugPrayerIndex + 1) % DEBUG_PRAYERS.length;
+            // const prayer = DEBUG_PRAYERS[debugPrayerIndex];
             
-            simulatePrayerState(prayer);
+            // simulatePrayerState(prayer);
             
-            // Update button text to show next prayer
-            const nextIndex = (debugPrayerIndex + 1) % DEBUG_PRAYERS.length;
-            this.textContent = `Test: ${PRAYER_DISPLAY[DEBUG_PRAYERS[nextIndex]]}`;
+            // // Update button text to show next prayer
+            // const nextIndex = (debugPrayerIndex + 1) % DEBUG_PRAYERS.length;
+            // this.textContent = `Test: ${PRAYER_DISPLAY[DEBUG_PRAYERS[nextIndex]]}`;
         });
     </script>
 </body>
