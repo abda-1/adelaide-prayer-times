@@ -1,8 +1,14 @@
 /**
  * Adelaide Prayer Times Scraper
  * 
- * Fetches iqamah times from Masjidbox and updates mosques.json
+ * Fetches iqamah times from multiple sources and updates mosques.json
  * Run: node scrape.js
+ * 
+ * Sources:
+ * - Masjidbox (maryam, adelaide-city) - parses REDUX_STATE JSON
+ * - GoPray (kilburn-centre) - parses HTML table
+ * - Awqat (al-khalil) - parses iqamafixed.js
+ * - ISSA (wandana) - relative times (hardcoded)
  * 
  * Used by GitHub Actions to auto-update mosque times daily
  */
@@ -30,48 +36,112 @@ const SCRAPABLE_SOURCES = [
         id: 'adelaide-city',
         url: 'https://masjidbox.com/prayer-times/adelaide-city-mosque',
         type: 'masjidbox'
+    },
+    {
+        id: 'al-khalil',
+        url: 'https://awqat.com.au/sa/akm/iqamafixed.js',
+        type: 'awqat'
+    },
+    {
+        id: 'kilburn-centre',
+        url: 'https://gopray.com.au/place/kilburn-musallah/',
+        type: 'gopray'
+    },
+    {
+        id: 'wandana',
+        url: 'https://islamicsocietysa.org.au/mosque/wandana-mosque/',
+        type: 'issa'
     }
 ];
 
 /**
- * Parse time from Masjidbox format (e.g., "410AM" or "1:12PM")
+ * Parse time from various formats to 24h "HH:MM" format
  */
-function parseMasjidboxTime(timeStr) {
+function parseTime(timeStr) {
     if (!timeStr || timeStr === 'NA') return null;
     
-    timeStr = timeStr.trim().toUpperCase();
+    timeStr = timeStr.trim();
     
-    // Try format with colon: "4:10 AM"
-    const colonMatch = timeStr.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
-    if (colonMatch) {
-        let hours = parseInt(colonMatch[1], 10);
-        const minutes = colonMatch[2];
-        const period = colonMatch[3].toUpperCase();
+    // Already in 24h format like "04:40" or "13:15"
+    const h24Match = timeStr.match(/^(\d{1,2}):(\d{2})$/);
+    if (h24Match) {
+        const hours = parseInt(h24Match[1], 10);
+        const mins = h24Match[2];
+        return `${hours.toString().padStart(2, '0')}:${mins}`;
+    }
+    
+    // 12h format with colon: "4:40 am" or "1:30 pm"
+    const h12ColonMatch = timeStr.match(/^(\d{1,2}):(\d{2})\s*(am|pm)$/i);
+    if (h12ColonMatch) {
+        let hours = parseInt(h12ColonMatch[1], 10);
+        const mins = h12ColonMatch[2];
+        const period = h12ColonMatch[3].toUpperCase();
         
         if (period === 'PM' && hours !== 12) hours += 12;
         if (period === 'AM' && hours === 12) hours = 0;
         
-        return `${hours.toString().padStart(2, '0')}:${minutes}`;
+        return `${hours.toString().padStart(2, '0')}:${mins}`;
     }
     
-    // Try format without colon: "410AM"
-    const noColonMatch = timeStr.match(/^(\d{1,2})(\d{2})(AM|PM)$/i);
+    // Format without colon: "410AM" or "130PM"
+    const noColonMatch = timeStr.match(/^(\d{1,2})(\d{2})\s*(AM|PM)$/i);
     if (noColonMatch) {
         let hours = parseInt(noColonMatch[1], 10);
-        const minutes = noColonMatch[2];
+        const mins = noColonMatch[2];
         const period = noColonMatch[3].toUpperCase();
         
         if (period === 'PM' && hours !== 12) hours += 12;
         if (period === 'AM' && hours === 12) hours = 0;
         
-        return `${hours.toString().padStart(2, '0')}:${minutes}`;
+        return `${hours.toString().padStart(2, '0')}:${mins}`;
     }
     
     return null;
 }
 
 /**
- * Scrape Masjidbox page for iqamah times
+ * Parse time from ISO date string like "2025-12-18T04:50:00+10:30"
+ */
+function parseISOTime(isoStr) {
+    if (!isoStr) return null;
+    
+    const match = isoStr.match(/T(\d{2}):(\d{2})/);
+    if (match) {
+        return `${match[1]}:${match[2]}`;
+    }
+    return null;
+}
+
+/**
+ * Parse time from awqat.com.au format
+ * Index: 1=Fajr, 2=Dhuhr, 3=Asr, 4=Maghrib, 5=Isha
+ */
+function parseAwqatTime(timeStr, prayerIndex) {
+    if (!timeStr || timeStr === '') return null;
+    
+    const match = timeStr.match(/^(\d{2}):(\d{2})$/);
+    if (!match) return null;
+    
+    let hours = parseInt(match[1], 10);
+    const mins = match[2];
+    
+    // Awqat uses 24h-ish format but stores Dhuhr/Jummah as "01:45" meaning 13:45
+    // Prayer index context:
+    // 1 = Fajr (always AM, 04:xx - 05:xx)
+    // 2 = Dhuhr (always PM, needs +12 if < 12)
+    // 3 = Asr (PM, usually 16:xx-18:xx)
+    // 4 = Maghrib (PM, usually 17:xx-21:xx)
+    // 5 = Isha (PM, usually 19:xx-23:xx)
+    
+    if (prayerIndex === 2 && hours < 12) {
+        hours += 12;
+    }
+    
+    return `${hours.toString().padStart(2, '0')}:${mins}`;
+}
+
+/**
+ * Scrape Masjidbox page for iqamah times by parsing REDUX_STATE JSON
  */
 async function scrapeMasjidbox(url) {
     try {
@@ -88,33 +158,226 @@ async function scrapeMasjidbox(url) {
         }
         
         const html = await response.text();
-        const $ = cheerio.load(html);
-        const bodyText = $('body').text();
         
-        // Regex patterns to extract iqamah times
-        const patterns = {
-            fajrIqamah: /Fajr.*?Iqamah\s*(\d{1,2}:?\d{2}\s*[AP]M)/i,
-            dhuhrIqamah: /Dhuhr.*?Iqamah\s*(\d{1,2}:?\d{2}\s*[AP]M)/i,
-            asrIqamah: /Asr.*?Iqamah\s*(\d{1,2}:?\d{2}\s*[AP]M)/i,
-            maghribIqamah: /Maghrib.*?Iqamah\s*(\d{1,2}:?\d{2}\s*[AP]M)/i,
-            ishaIqamah: /Isha.*?Iqamah\s*(\d{1,2}:?\d{2}\s*[AP]M)/i,
-            jummah: /Jum(?:u)?ah\s*(\d{1,2}:?\d{2}\s*[AP]M)/i,
-        };
+        // Extract REDUX_STATE JSON from the page
+        const reduxMatch = html.match(/window\.REDUX_STATE\s*=\s*'([^']+)'/);
+        if (!reduxMatch) {
+            throw new Error('Could not find REDUX_STATE');
+        }
         
-        const fajrMatch = bodyText.match(patterns.fajrIqamah);
-        const dhuhrMatch = bodyText.match(patterns.dhuhrIqamah);
-        const asrMatch = bodyText.match(patterns.asrIqamah);
-        const maghribMatch = bodyText.match(patterns.maghribIqamah);
-        const ishaMatch = bodyText.match(patterns.ishaIqamah);
-        const jummahMatch = bodyText.match(patterns.jummah);
+        // Decode URL-encoded JSON
+        let jsonStr = reduxMatch[1];
+        
+        // First, handle encoded unicode escapes (%5Cu0627 or %u0627)
+        jsonStr = jsonStr.replace(/%5Cu([0-9a-fA-F]{4})/gi, (_, hex) => 
+            String.fromCharCode(parseInt(hex, 16))
+        );
+        jsonStr = jsonStr.replace(/%u([0-9a-fA-F]{4})/gi, (_, hex) => 
+            String.fromCharCode(parseInt(hex, 16))
+        );
+        
+        // Then decode standard URL encoding
+        try {
+            jsonStr = decodeURIComponent(jsonStr);
+        } catch (e) {
+            // If decoding fails, try replacing problematic sequences
+            jsonStr = jsonStr.replace(/%([0-9A-F]{2})/gi, (_, hex) => 
+                String.fromCharCode(parseInt(hex, 16))
+            );
+        }
+        
+        // Handle JavaScript unicode escapes (\u0627)
+        jsonStr = jsonStr.replace(/\\u([0-9a-fA-F]{4})/g, (_, hex) => 
+            String.fromCharCode(parseInt(hex, 16))
+        );
+        
+        const state = JSON.parse(jsonStr);
+        
+        // Navigate to today's timetable data
+        const timetable = state?.masjidbox?.masjidboxAthany?.timetable;
+        if (!timetable || !timetable[0]) {
+            throw new Error('Could not find timetable data');
+        }
+        
+        const today = timetable[0];
+        const iqamah = today.iqamah;
+        
+        if (!iqamah) {
+            throw new Error('Could not find iqamah data');
+        }
+        
+        // Parse jumuah from Friday's data
+        let jummah = null;
+        for (const day of timetable) {
+            if (day.jumuah && day.jumuah[0]) {
+                jummah = parseISOTime(day.iqamah?.jumuah?.[0] || day.jumuah[0]);
+                break;
+            }
+        }
         
         return {
-            fajr: fajrMatch ? parseMasjidboxTime(fajrMatch[1]) : null,
-            dhuhr: dhuhrMatch ? parseMasjidboxTime(dhuhrMatch[1]) : null,
-            asr: asrMatch ? parseMasjidboxTime(asrMatch[1]) : null,
-            maghrib: maghribMatch ? parseMasjidboxTime(maghribMatch[1]) : '+10',
-            isha: ishaMatch ? parseMasjidboxTime(ishaMatch[1]) : null,
-            jummah: jummahMatch ? parseMasjidboxTime(jummahMatch[1]) : null
+            fajr: parseISOTime(iqamah.fajr),
+            dhuhr: parseISOTime(iqamah.dhuhr),
+            asr: parseISOTime(iqamah.asr),
+            maghrib: parseISOTime(iqamah.maghrib),
+            isha: parseISOTime(iqamah.isha),
+            jummah: jummah
+        };
+        
+    } catch (error) {
+        console.error(`  ❌ Error: ${error.message}`);
+        return null;
+    }
+}
+
+/**
+ * Scrape awqat.com.au iqamafixed.js for times
+ */
+async function scrapeAwqat(url) {
+    try {
+        console.log(`  Fetching: ${url}`);
+        
+        const response = await fetch(url, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (compatible; AdelaidePrayerTimes/1.0)'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const jsContent = await response.text();
+        
+        // Parse FIXED_IQAMA_TIMES array: ['','04:40','01:45','17:15','20:45','22:20']
+        // Index: 0=empty, 1=Fajr, 2=Dhuhr, 3=Asr, 4=Maghrib, 5=Isha
+        const timesMatch = jsContent.match(/FIXED_IQAMA_TIMES\s*=\s*\[(.*?)\]/);
+        if (!timesMatch) {
+            throw new Error('Could not find FIXED_IQAMA_TIMES');
+        }
+        
+        // Extract times from the array
+        const timesStr = timesMatch[1];
+        const times = timesStr.split(',').map(t => t.trim().replace(/['"]/g, ''));
+        
+        // Parse Jummah time from announcement: "JUMU'AH @ 01:15 PM"
+        const jummahMatch = jsContent.match(/JUMU['']AH\s*@\s*(\d{1,2}:\d{2})\s*(AM|PM)?/i);
+        let jummah = null;
+        if (jummahMatch) {
+            const jummahTime = jummahMatch[1];
+            const period = jummahMatch[2] || 'PM'; // Default to PM for Jummah
+            jummah = parseTime(`${jummahTime} ${period}`);
+        }
+        
+        return {
+            fajr: parseAwqatTime(times[1], 1),
+            dhuhr: parseAwqatTime(times[2], 2),
+            asr: parseAwqatTime(times[3], 3),
+            maghrib: parseAwqatTime(times[4], 4),
+            isha: parseAwqatTime(times[5], 5),
+            jummah: jummah
+        };
+        
+    } catch (error) {
+        console.error(`  ❌ Error: ${error.message}`);
+        return null;
+    }
+}
+
+/**
+ * Scrape gopray.com.au for prayer times
+ */
+async function scrapeGoPray(url) {
+    try {
+        console.log(`  Fetching: ${url}`);
+        
+        const response = await fetch(url, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                'Accept-Language': 'en-AU,en;q=0.9'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const html = await response.text();
+        const $ = cheerio.load(html);
+        
+        // Find prayer times table
+        const times = {};
+        
+        // Check if we found the prayer times div
+        const prayerDiv = $('div.place-prayer-times');
+        
+        if (prayerDiv.length === 0) {
+            throw new Error('Could not find place-prayer-times div');
+        }
+        
+        // Parse table rows: <tr><th>Fajr</th><td>4:40 am</td></tr>
+        $('div.place-prayer-times table tr').each((i, row) => {
+            const label = $(row).find('th').text().trim().toLowerCase();
+            const time = $(row).find('td').first().text().trim();
+            
+            if (label.includes('fajr')) {
+                times.fajr = parseTime(time);
+            } else if (label.includes('zuhr') || label.includes('dhuhr')) {
+                times.dhuhr = parseTime(time);
+            } else if (label.includes('asr')) {
+                times.asr = parseTime(time);
+            } else if (label.includes('maghrib')) {
+                times.maghrib = parseTime(time);
+            } else if (label.includes('isha') || label.includes('esha')) {
+                times.isha = parseTime(time);
+            } else if (label.includes('jummah') || label.includes('jumu')) {
+                times.jummah = parseTime(time);
+            }
+        });
+        
+        return {
+            fajr: times.fajr || null,
+            dhuhr: times.dhuhr || null,
+            asr: times.asr || null,
+            maghrib: times.maghrib || null,
+            isha: times.isha || null,
+            jummah: times.jummah || null
+        };
+        
+    } catch (error) {
+        console.error(`  ❌ Error: ${error.message}`);
+        return null;
+    }
+}
+
+/**
+ * Scrape ISSA website for Wandana Mosque
+ * Note: ISSA uses relative times (e.g., "30 mins after Adhan")
+ * We store these as "+30", "+15", "+10" formats
+ */
+async function scrapeISSA(url) {
+    try {
+        console.log(`  Fetching: ${url}`);
+        
+        // ISSA Wandana uses relative times (stated on their website):
+        // "Fajr: Iqamah 30 mins after Adhan"
+        // "Zuhr & Asr: Iqamah 15 mins after Adhan"
+        // "Maghrib & Isha: Iqamah 10 mins after Adhan"
+        // "Friday: Khutbah 1:30 PM | Iqamah 2:00 PM"
+        
+        // Since these are fixed rules, we return hardcoded values
+        // The scraper runs daily but these rarely change
+        
+        console.log('  ℹ️  Using relative times for ISSA mosque (per website)');
+        
+        return {
+            fajr: '+30',      // 30 mins after Adhan
+            dhuhr: '+15',     // 15 mins after Adhan
+            asr: '+15',       // 15 mins after Adhan
+            maghrib: '+10',   // 10 mins after Adhan
+            isha: '+10',      // 10 mins after Adhan
+            jummah: '14:00'   // 2:00 PM
         };
         
     } catch (error) {
@@ -171,12 +434,25 @@ async function scrapeAndUpdate() {
     
     // Scrape each source
     for (const source of SCRAPABLE_SOURCES) {
-        console.log(`\n📍 Scraping: ${source.id}`);
+        console.log(`\n📍 Scraping: ${source.id} (${source.type})`);
         
         let scrapedTimes = null;
         
-        if (source.type === 'masjidbox') {
-            scrapedTimes = await scrapeMasjidbox(source.url);
+        switch (source.type) {
+            case 'masjidbox':
+                scrapedTimes = await scrapeMasjidbox(source.url);
+                break;
+            case 'awqat':
+                scrapedTimes = await scrapeAwqat(source.url);
+                break;
+            case 'gopray':
+                scrapedTimes = await scrapeGoPray(source.url);
+                break;
+            case 'issa':
+                scrapedTimes = await scrapeISSA(source.url);
+                break;
+            default:
+                console.log(`  ⚠️  Unknown source type: ${source.type}`);
         }
         
         if (scrapedTimes) {
@@ -196,7 +472,14 @@ async function scrapeAndUpdate() {
                 }
                 
                 if (hasChanges) {
-                    mosque.source = 'Masjidbox';
+                    // Update source info
+                    const sourceNames = {
+                        'masjidbox': 'Masjidbox',
+                        'awqat': 'Awqat',
+                        'gopray': 'GoPray',
+                        'issa': 'ISSA'
+                    };
+                    mosque.source = sourceNames[source.type] || source.type;
                     mosque.sourceUrl = source.url;
                     updatedCount++;
                     console.log('  ✅ Updated');

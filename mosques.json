@@ -1,23 +1,42 @@
 {
-  "lastUpdated": "2025-12-18T00:00:00.000Z",
-  "source": "manual",
+  "lastUpdated": "2025-12-18T12:01:10.387Z",
+  "source": "scraper",
   "mosques": [
     {
       "id": "wandana",
-      "name": "Wandana Mosque",
+      "name": "Masjid Abu Bakr (Wandana)",
       "address": "52 Wandana Ave, Gilles Plains",
       "coordinates": {
         "lat": -34.8489,
         "lng": 138.6321
       },
-      "source": "Manual",
-      "sourceUrl": null,
+      "source": "ISSA",
+      "sourceUrl": "https://islamicsocietysa.org.au/mosque/wandana-mosque/",
       "times": {
-        "fajr": "05:00",
-        "dhuhr": "13:15",
-        "asr": "17:00",
+        "fajr": "+30",
+        "dhuhr": "+15",
+        "asr": "+15",
         "maghrib": "+10",
-        "isha": "20:00",
+        "isha": "+10",
+        "jummah": "14:00"
+      }
+    },
+    {
+      "id": "kilburn-centre",
+      "name": "The Centre (Kilburn)",
+      "address": "416 Churchill Rd, Kilburn",
+      "coordinates": {
+        "lat": -34.8631,
+        "lng": 138.5862
+      },
+      "source": "GoPray",
+      "sourceUrl": "https://gopray.com.au/place/kilburn-musallah/",
+      "times": {
+        "fajr": "04:40",
+        "dhuhr": "13:30",
+        "asr": "17:05",
+        "maghrib": "20:30",
+        "isha": "22:10",
         "jummah": "13:30"
       }
     },
@@ -35,7 +54,7 @@
         "fajr": "04:50",
         "dhuhr": "13:22",
         "asr": "17:15",
-        "maghrib": "+10",
+        "maghrib": "20:37",
         "isha": "22:17",
         "jummah": "13:30"
       }
@@ -54,7 +73,7 @@
         "fajr": "04:42",
         "dhuhr": "13:22",
         "asr": "18:25",
-        "maghrib": "+10",
+        "maghrib": "20:37",
         "isha": "22:24",
         "jummah": "14:00"
       }
@@ -67,15 +86,15 @@
         "lat": -34.8683,
         "lng": 138.5456
       },
-      "source": "Manual",
+      "source": "Awqat",
       "sourceUrl": "https://awqat.com.au/sa/akm/",
       "times": {
-        "fajr": "04:45",
-        "dhuhr": "13:15",
-        "asr": "17:30",
-        "maghrib": "+5",
-        "isha": "21:30",
-        "jummah": "13:30"
+        "fajr": "04:40",
+        "dhuhr": "13:45",
+        "asr": "17:15",
+        "maghrib": "20:45",
+        "isha": "22:20",
+        "jummah": "13:15"
       }
     }
   ]

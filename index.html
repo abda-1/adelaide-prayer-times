@@ -58,7 +58,7 @@
             </div>
 
             <footer class="footer">
-                <p>Data from <a href="https://aladhan.com" target="_blank" rel="noopener">AlAdhan</a> · Updated <span id="lastUpdated">—</span></p>
+                <p>Data Last Updated <span id="lastUpdated">—</span></p>
             </footer>
         </main>
     </div>
@@ -126,7 +126,8 @@
         // API
         // ============================================
         async function fetchMosquesData() {
-            const response = await fetch(MOSQUES_JSON_URL);
+            // Add cache-busting parameter to always get fresh data
+            const response = await fetch(`${MOSQUES_JSON_URL}?v=${Date.now()}`);
             if (!response.ok) throw new Error('Failed to fetch mosques data');
             const data = await response.json();
             return data.mosques;
@@ -244,7 +245,8 @@
 
                 let cardClass = 'prayer-card';
                 if (isActive) cardClass += ' prayer-card--active';
-                if (isPassed && prayer !== 'sunrise') cardClass += ' prayer-card--passed';
+                // Don't mark as passed if it's the next prayer (handles after-Isha case)
+                if (isPassed && !isActive && prayer !== 'sunrise') cardClass += ' prayer-card--passed';
 
                 return `
                     <div class="${cardClass}">
