@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-02-04T16:09:30.887Z",
+  "lastUpdated": "2026-02-05T16:09:42.961Z",
   "source": "scraper",
   "mosques": [
     {
@@ -51,11 +51,11 @@
       "source": "Masjidbox",
       "sourceUrl": "https://masjidbox.com/prayer-times/maryam-masjid-1705746728563",
       "times": {
-        "fajr": "05:33",
-        "dhuhr": "13:39",
+        "fajr": "05:34",
+        "dhuhr": "13:40",
         "asr": "17:29",
-        "maghrib": "20:31",
-        "isha": "21:59",
+        "maghrib": "20:30",
+        "isha": "21:58",
         "jummah": "13:30"
       }
     },
@@ -92,8 +92,8 @@
         "fajr": "05:30",
         "dhuhr": "13:55",
         "asr": "17:30",
-        "maghrib": "20:35",
-        "isha": "22:10",
+        "maghrib": "20:30",
+        "isha": "22:00",
         "jummah": "13:30"
       }
     }
