@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-03-01T15:46:42.334Z",
+  "lastUpdated": "2026-03-02T16:03:39.093Z",
   "source": "scraper",
   "mosques": [
     {
@@ -51,11 +51,11 @@
       "source": "Masjidbox",
       "sourceUrl": "https://masjidbox.com/prayer-times/maryam-masjid-1705746728563",
       "times": {
-        "fajr": "05:49",
+        "fajr": "05:51",
         "dhuhr": "13:38",
-        "asr": "17:20",
-        "maghrib": "20:03",
-        "isha": "21:25",
+        "asr": "17:19",
+        "maghrib": "20:02",
+        "isha": "21:24",
         "jummah": "13:30"
       }
     },
@@ -70,11 +70,11 @@
       "source": "Masjidbox",
       "sourceUrl": "https://masjidbox.com/prayer-times/adelaide-city-mosque",
       "times": {
-        "fajr": "06:06",
+        "fajr": "06:07",
         "dhuhr": "13:38",
-        "asr": "18:12",
-        "maghrib": "20:04",
-        "isha": "21:40",
+        "asr": "18:11",
+        "maghrib": "20:03",
+        "isha": "21:30",
         "jummah": "13:45"
       }
     },
