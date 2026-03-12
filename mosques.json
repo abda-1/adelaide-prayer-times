@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-03-11T16:12:24.251Z",
+  "lastUpdated": "2026-03-12T16:34:29.623Z",
   "source": "scraper",
   "mosques": [
     {
@@ -89,7 +89,7 @@
       "source": "Awqat",
       "sourceUrl": "https://awqat.com.au/sa/akm/iqamafixed.js",
       "times": {
-        "fajr": "06:10",
+        "fajr": "06:15",
         "dhuhr": "13:55",
         "asr": "17:20",
         "maghrib": "19:55",
