@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-04-03T16:02:26.595Z",
+  "lastUpdated": "2026-04-04T15:55:25.169Z",
   "source": "scraper",
   "mosques": [
     {
@@ -53,9 +53,9 @@
       "times": {
         "fajr": "06:36",
         "dhuhr": "13:29",
-        "asr": "16:52",
-        "maghrib": "19:18",
-        "isha": "20:37",
+        "asr": "16:51",
+        "maghrib": "19:17",
+        "isha": "20:36",
         "jummah": "13:30"
       }
     },
@@ -72,9 +72,9 @@
       "times": {
         "fajr": "06:38",
         "dhuhr": "13:29",
-        "asr": "17:36",
-        "maghrib": "19:18",
-        "isha": "20:42",
+        "asr": "17:35",
+        "maghrib": "19:17",
+        "isha": "20:40",
         "jummah": "13:17"
       }
     },
@@ -89,11 +89,11 @@
       "source": "Awqat",
       "sourceUrl": "https://awqat.com.au/sa/akm/iqamafixed.js",
       "times": {
-        "fajr": "06:30",
-        "dhuhr": "13:50",
-        "asr": "16:55",
-        "maghrib": "19:25",
-        "isha": "20:45",
+        "fajr": "05:35",
+        "dhuhr": "12:50",
+        "asr": "15:55",
+        "maghrib": "18:20",
+        "isha": "19:40",
         "jummah": "12:30"
       }
     }
