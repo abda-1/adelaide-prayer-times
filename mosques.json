@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-05-21T17:37:08.246Z",
+  "lastUpdated": "2026-05-22T17:24:31.240Z",
   "source": "scraper",
   "mosques": [
     {
@@ -54,7 +54,7 @@
         "fajr": "06:09",
         "dhuhr": "12:22",
         "asr": "15:12",
-        "maghrib": "17:27",
+        "maghrib": "17:26",
         "isha": "18:50",
         "jummah": "13:30"
       }
@@ -70,10 +70,10 @@
       "source": "Masjidbox",
       "sourceUrl": "https://masjidbox.com/prayer-times/adelaide-city-mosque",
       "times": {
-        "fajr": "06:11",
+        "fajr": "06:12",
         "dhuhr": "12:22",
         "asr": "15:48",
-        "maghrib": "17:27",
+        "maghrib": "17:26",
         "isha": "18:55",
         "jummah": "13:17"
       }
