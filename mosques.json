@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-07-08T16:57:10.079Z",
+  "lastUpdated": "2026-07-09T17:28:41.261Z",
   "source": "scraper",
   "mosques": [
     {
@@ -72,9 +72,9 @@
       "times": {
         "fajr": "06:25",
         "dhuhr": "12:31",
-        "asr": "15:50",
-        "maghrib": "17:28",
-        "isha": "18:58",
+        "asr": "15:51",
+        "maghrib": "17:29",
+        "isha": "18:59",
         "jummah": "13:20"
       }
     },
